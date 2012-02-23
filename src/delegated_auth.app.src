@@ -1,0 +1,7 @@
+{application, delegated_auth, [
+    {description, "Delegate Authentication/Authorization decisions to external service"},
+    {vsn, git},
+    {registered, []},
+    {applications, [kernel, stdlib]},
+    {env, []}
+]}.
