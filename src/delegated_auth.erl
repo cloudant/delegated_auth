@@ -55,7 +55,10 @@ validate_name(_Name) ->
     throw({bad_request, <<"Malformed or missing 'name'">>}).
 
 validate_roles(Roles) ->
-    validate_roles(Roles, []).
+    case validate_roles(Roles, []) of
+        [] -> ",";
+        Else -> Else
+    end.
 
 validate_roles([], Acc) ->
     string:join(Acc, ",");
