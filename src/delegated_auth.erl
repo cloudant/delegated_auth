@@ -84,9 +84,7 @@ make_cookie_time() ->
 ensure_delegated_auth_secret() ->
     case couch_config:get("delegated_auth", "secret", nil) of
         nil ->
-            NewSecret = ?b2l(couch_uuids:random()),
-            couch_config:set("delegated_auth", "secret", NewSecret),
-            NewSecret;
+            throw({bad_request, <<"Server not configured for delegated authentication">>});
         Secret -> Secret
     end.
 
