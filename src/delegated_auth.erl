@@ -2,17 +2,19 @@
 -include_lib("couch/include/couch_db.hrl").
 -export([handle_delegated_auth_req/1, delegated_authentication_handler/1]).
 
--import(couch_httpd, [send_json/3]).
+-import(chttpd, [send_json/3, send_method_not_allowed/2]).
 
 %% Return a token
-handle_delegated_auth_req(Req) ->
+handle_delegated_auth_req(#httpd{method='POST'}=Req) ->
     %% cloudant_auth should verify admin access
     couch_httpd:validate_ctype(Req, "application/json"),
     {Props} = couch_httpd:json_body(Req),
     Name = validate_name(couch_util:get_value(<<"name">>, Props)),
     Roles = validate_roles(couch_util:get_value(<<"roles">>, Props, [])),
     Cookie = make_cookie(Name, Roles),
-    send_json(Req, 200, {[{ok, true}, {cookie, Cookie}]}).
+    send_json(Req, 200, {[{ok, true}, {cookie, Cookie}]});
+handle_delegated_auth_req(Req) ->
+    send_method_not_allowed(Req, "POST").
 
 %% Look for token
 delegated_authentication_handler(#httpd{mochi_req=MochiReq}=Req) ->
