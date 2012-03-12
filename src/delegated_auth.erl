@@ -5,14 +5,27 @@
 -import(chttpd, [send_json/3, send_method_not_allowed/2]).
 
 %% Return a token
-handle_delegated_auth_req(#httpd{method='POST'}=Req) ->
+handle_delegated_auth_req(#httpd{method='POST', mochi_req=MochiReq}=Req) ->
     %% cloudant_auth should verify admin access
-    couch_httpd:validate_ctype(Req, "application/json"),
-    {Props} = couch_httpd:json_body(Req),
-    Name = validate_name(couch_util:get_value(<<"name">>, Props)),
-    Roles = validate_roles(couch_util:get_value(<<"roles">>, Props, [])),
+    {Name, Roles} = case MochiReq:get_primary_header_value("content-type") of
+        "application/x-www-form-urlencoded" ->
+            ReqBody = MochiReq:recv_body(),
+            Form = [{?l2b(K),?l2b(V)} || {K,V} <- mochiweb_util:parse_qs(ReqBody)],
+            Name0 = validate_name(couch_util:get_value(<<"name">>, Form)),
+            Roles0 = validate_roles(proplists:get_all_values(<<"roles">>, Form)),
+            {Name0, Roles0};
+        "application/json" ->
+            couch_httpd:validate_ctype(Req, "application/json"),
+            {Props} = couch_httpd:json_body(Req),
+            Name0 = validate_name(couch_util:get_value(<<"name">>, Props)),
+            Roles0 = validate_roles(couch_util:get_value(<<"roles">>, Props, [])),
+            {Name0, Roles0};
+        _ ->
+            throw({bad_request, <<"Unexpected content type">>})
+    end,
     Cookie = make_cookie(Name, Roles),
-    send_json(Req, 200, {[{ok, true}, {cookie, Cookie}]});
+    send_json(Req, 200, {[{ok, true}, {cookie, Cookie},
+                          {name, ?l2b(Name)}, {roles, ?l2b(Roles)}]});
 handle_delegated_auth_req(Req) ->
     send_method_not_allowed(Req, "POST").
 
@@ -57,10 +70,7 @@ validate_name(_Name) ->
     throw({bad_request, <<"Malformed or missing 'name'">>}).
 
 validate_roles(Roles) ->
-    case validate_roles(Roles, []) of
-        [] -> ",";
-        Else -> Else
-    end.
+    validate_roles(Roles, []).
 
 validate_roles([], Acc) ->
     string:join(Acc, ",");
@@ -69,6 +79,8 @@ validate_roles([Role|Rest], Acc) when is_binary(Role) ->
 validate_roles(_, _Acc) ->
     throw({bad_request, <<"Malformed roles">>}).
 
+make_cookie(Name, "") ->
+    make_cookie(Name, ",");
 make_cookie(Name, Roles) ->
     TimeStamp = make_cookie_time(),
     Secret = ensure_delegated_auth_secret(),
