@@ -96,7 +96,7 @@ make_cookie_time() ->
     NowMS * 1000000 + NowS.
 
 ensure_delegated_auth_secret() ->
-    case couch_config:get("delegated_auth", "secret", nil) of
+    case config:get("delegated_auth", "secret", nil) of
         nil ->
             throw({bad_request, <<"Server not configured for delegated authentication">>});
         Secret -> Secret
@@ -104,5 +104,5 @@ ensure_delegated_auth_secret() ->
 
 %% timeout defaults to 30 days.
 timeout() ->
-    list_to_integer(couch_config:get("delegated_auth", "timeout", "2592000")).
+    list_to_integer(config:get("delegated_auth", "timeout", "2592000")).
 
