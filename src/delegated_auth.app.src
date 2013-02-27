@@ -2,6 +2,6 @@
     {description, "Delegate Authentication/Authorization decisions to external service"},
     {vsn, git},
     {registered, []},
-    {applications, [kernel, stdlib]},
+    {applications, [kernel, stdlib, config]},
     {env, []}
 ]}.
