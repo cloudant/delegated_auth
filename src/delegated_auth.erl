@@ -39,7 +39,7 @@ delegated_authentication_handler(#httpd{mochi_req=MochiReq}=Req) ->
     Cookie ->
         [User, Roles, TimeStr | MacParts] = try
             DelegatedAuth = couch_util:decodeBase64Url(Cookie),
-            string:tokens(?b2l(DelegatedAuth), ":")
+            re:split(?b2l(DelegatedAuth), ":", [{return, list}])
         catch
             _:_Error ->
                 throw({bad_request, <<"Malformed DelegatedAuth cookie.">>})
