@@ -96,8 +96,8 @@ make_cookie_time() ->
     NowMS * 1000000 + NowS.
 
 ensure_delegated_auth_secret() ->
-    case config:get("delegated_auth", "secret", nil) of
-        nil ->
+    case config:get("delegated_auth", "secret", undefined) of
+        undefined ->
             throw({bad_request, <<"Server not configured for delegated authentication">>});
         Secret -> Secret
     end.
