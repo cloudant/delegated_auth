@@ -46,7 +46,7 @@ delegated_authentication_handler(#httpd{mochi_req=MochiReq}=Req) ->
         end,
         CurrentTime = make_cookie_time(),
         Secret = ensure_delegated_auth_secret(),
-        ExpectedMac = crypto:sha_mac(Secret, User ++ ":" ++ Roles ++ ":" ++ TimeStr),
+        ExpectedMac = couch_crypto:hmac(sha, Secret, User ++ ":" ++ Roles ++ ":" ++ TimeStr),
         ActualMac = ?l2b(string:join(MacParts, ":")),
         Timeout = timeout(),
         case (catch erlang:list_to_integer(TimeStr, 16)) of
@@ -85,7 +85,7 @@ make_cookie(Name, Roles) ->
     TimeStamp = make_cookie_time(),
     Secret = ensure_delegated_auth_secret(),
     SessionData = Name ++ ":" ++ Roles ++ ":" ++ erlang:integer_to_list(TimeStamp, 16),
-    Mac = crypto:sha_mac(Secret, SessionData),
+    Mac = couch_crypto:hmac(sha, Secret, SessionData),
     {"Set-Cookie", CookieValue} = mochiweb_cookies:cookie("DelegatedAuth",
         couch_util:encodeBase64Url(SessionData ++ ":" ++ ?b2l(Mac)),
         [{path, "/"}, {max_age, timeout()}]),
