@@ -1,4 +1,7 @@
 -module(delegated_auth).
+
+-compile(tuple_calls).
+
 -include_lib("couch/include/couch_db.hrl").
 -export([handle_delegated_auth_req/1, delegated_authentication_handler/1]).
 
